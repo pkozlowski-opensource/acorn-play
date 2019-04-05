@@ -1,0 +1,7 @@
+- experiment with code emit
+- AST transform  to take care of JshElementStart / JshElementEnd / JshElement nodes
+  - add meaning to elements / components and their attributes (or do this in the inital template pass)    
+  - actual tag node -> JS node transformation
+  - change template function signature
+  - add imports
+- error-cases tests
