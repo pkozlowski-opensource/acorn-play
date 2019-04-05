@@ -23,8 +23,8 @@ jshTokens.jshTagEnd.updateContext = function() {
 };
 
 function isJshNameStart(ch) {
-  // A-Z || a-z || [ || (
-  return (ch >= 65 && ch <= 90) || (ch >= 97 && ch <= 122) || ch === 91 || ch === 40;
+  // A-Z || a-z || [ || ( || $
+  return (ch >= 65 && ch <= 90) || (ch >= 97 && ch <= 122) || ch === 91 || ch === 40 || ch === 36;
 }
 
 function isJshNamePart(ch) {  
@@ -71,12 +71,20 @@ function jshPlugin(options, Parser) {
         this.next();  // tag name
 
         // attributes
-        while (this.type !== jshTokens.jshTagEnd) {
+        while (this.type !== jshTokens.jshTagEnd && this.type !== tt.slash) {
           node.attributes.push(this._parseAttribute());
         }
 
-        this.expect(jshTokens.jshTagEnd);  // >
-        return this.finishNode(node, 'JshElementStart');
+        // is self-closing?
+        if (this.type === tt.slash) {
+          this.expect(tt.slash);             // /
+          this.expect(jshTokens.jshTagEnd);  // >
+          return this.finishNode(node, 'JshElement');
+        } else {
+          this.expect(jshTokens.jshTagEnd);  // >
+          return this.finishNode(node, 'JshElementStart');
+        }
+
       } else if (this.type === tt.slash) {
         this.next();  // skip /
         node.name = this.value;

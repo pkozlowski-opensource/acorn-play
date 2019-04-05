@@ -29,6 +29,12 @@ test('nested elements', '<a><b></b></a>', {
   ]
 });
 
+test('self-closing elements', '<a/>', {
+  'body': [
+    {type: 'JshElement', name: 'a'},
+  ]
+});
+
 // attributes - without value
 test('single attribute without value', '<a href>', {
   body: [
@@ -137,6 +143,13 @@ test('single attribute without value', `<a href={expr}>`, {
   ]
 });
 
+// attributes on self-closing elements
+test('self-closing elements', '<a href="http://go.com"/>', {
+  'body': [
+    {type: 'JshElement', name: 'a', attributes: [{type: 'JshAttribute', name: 'href', value: 'http://go.com'}]},
+  ]
+});
+
 // elements and JS blocks mix
 test('element inside JS block', 'if (true) { <div></div> }', {
   'body': [{
@@ -168,9 +181,27 @@ test('JS blocks inside element', '<a>let a = 1;</a>', {
   ]
 });
 
+// components 
+test('tag names indicating components', '<$cmpt></$cmpt>', {
+  'body': [
+    {type: 'JshElementStart', name: '$cmpt'},
+    {type: 'JshElementEnd', name: '$cmpt'},
+  ]
+});
+
+test('self-closing tag names indicating components', '<$cmpt/>', {
+  'body': [
+    {type: 'JshElement', name: '$cmpt'},
+  ]
+});
+
+test('attributes on self-closing components', '<$cmpt do="good"/>', {
+  'body': [
+    {type: 'JshElement', name: '$cmpt', attributes: [{type: 'JshAttribute', name: 'do', value: 'good'}]},
+  ]
+});
+
 // tests to write:
-// <a/> - self closing element
-// <a href/> - attrs on self closing element
 // <a ""> - rubish in the attribute name place
 // </*&$$ - rubbish after </
 // </a attr - attribute after </
