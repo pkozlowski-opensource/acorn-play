@@ -166,13 +166,12 @@ test('JS blocks inside element', '<a>let a = 1;</a>', {
     {type: 'VariableDeclaration'},
     {type: 'JshElementEnd', name: 'a'},
   ]
-})
+});
 
 // tests to write:
 // <a/> - self closing element
 // <a href/> - attrs on self closing element
 // <a ""> - rubish in the attribute name place
-// < - standalone <
 // </*&$$ - rubbish after </
 // </a attr - attribute after </
 

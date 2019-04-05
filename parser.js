@@ -9,7 +9,6 @@ const tc_cTag = new TokContext('</tag', false);
 
 const jshTokens = {
   jshName: new TokenType('jshName'),
-  jshAttrName: new TokenType('jshAttrName'),
   jshTagStart: new TokenType('jshTagStart'),
   jshTagEnd: new TokenType('jshTagEnd')
 };
@@ -129,8 +128,8 @@ function jshPlugin(options, Parser) {
 
     updateContext(prevType) {
       if (prevType === jshTokens.jshTagStart && this.type === tt.slash) {
-        this.context.pop();  // pop open tag context
-        this.context.push(tc_cTag);
+        this.context.pop();         // pop open tag context
+        this.context.push(tc_cTag); // push close tag context
       }
 
       return super.updateContext(prevType);
