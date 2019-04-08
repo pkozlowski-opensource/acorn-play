@@ -44,9 +44,9 @@ function jshPlugin(options, Parser) {
 
       // attribute value
       if (this.eat(tt.eq)) {
-        if (this.type === tt.string || this.type === jshTokens.jshName) {
+        if (this.type === tt.string) {
           node.value = this.value;
-          this.eat(jshTokens.jshName) || this.eat(tt.string);
+          this.eat(tt.string);
         } else if (this.type === tt.braceL) {
           this.expect(tt.braceL);
           node.value = this.parseExpression();

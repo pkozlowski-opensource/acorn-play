@@ -79,23 +79,12 @@ test('single attribute with []', '<a [if]>', {
   ]
 });
 
-test('single attribute with []', '<a (click)>', {
+test('single attribute with ()', '<a (click)>', {
   body: [
     {
       type: 'JshElementStart',
       name: 'a',
       attributes: [{type: 'JshAttribute', name: '(click)'}]
-    },
-  ]
-});
-
-// attributes - with unquoted value
-test('single attribute with unquoted value', '<a id=some>', {
-  body: [
-    {
-      type: 'JshElementStart',
-      name: 'a',
-      attributes: [{type: 'JshAttribute', name: 'id', value: 'some'}]
     },
   ]
 });

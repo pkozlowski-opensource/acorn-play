@@ -58,16 +58,24 @@ function run() {
   for (let i=0; i<testsToRun.length; i++) {
     const test = testsToRun[i];
     process.stdout.write('.');
-    const producedAst = jshParser.parse(test.source);
-    // console.log(JSON.stringify(producedAst, null, 2));
-    // const producedAst = Parser.parse(test.source);
-    if (isAstDifferent(test.ast, producedAst)) {
+
+    try {
+      const producedAst = jshParser.parse(test.source);
+      // console.log(JSON.stringify(producedAst, null, 2));
+      // const producedAst = Parser.parse(test.source);
+      if (isAstDifferent(test.ast, producedAst)) {
+        console.log(chalk.red(`\nTest "${test.name}" failed!\n`));
+        console.log(`Expected:\n\n ${JSON.stringify(test.ast, null, 2)} \n\nbut got:\n\n ${JSON.stringify(producedAst, null, 2)}`);
+        koCounter++;
+      } else {
+        okCounter++;
+      }
+    } catch (e) {
       console.log(chalk.red(`\nTest "${test.name}" failed!\n`));
-      console.log(`Expected:\n\n ${JSON.stringify(test.ast, null, 2)} \n\nbut got:\n\n ${JSON.stringify(producedAst, null, 2)}`);
+      console.log(e);
       koCounter++;
-    } else {
-      okCounter++;
     }
+    
   }
   console.log('\n\nTOTAL: ', okCounter + koCounter);
   console.log('Passed: ', okCounter);
