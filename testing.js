@@ -1,3 +1,4 @@
+const chalk = require('chalk');
 const acorn = require('acorn');
 const Parser = acorn.Parser;
 
@@ -56,27 +57,27 @@ function run() {
   const testsToRun = ftests.length ? ftests : tests;
   for (let i=0; i<testsToRun.length; i++) {
     const test = testsToRun[i];
+    process.stdout.write('.');
     const producedAst = jshParser.parse(test.source);
     // console.log(JSON.stringify(producedAst, null, 2));
     // const producedAst = Parser.parse(test.source);
     if (isAstDifferent(test.ast, producedAst)) {
-      console.log(
-          `${test.name} failed! Expected:\n ${JSON.stringify(test.ast, null, 2)} \nbut got:\n ${JSON.stringify(producedAst, null, 2)}`);
+      console.log(chalk.red(`\nTest "${test.name}" failed!\n`));
+      console.log(`Expected:\n\n ${JSON.stringify(test.ast, null, 2)} \n\nbut got:\n\n ${JSON.stringify(producedAst, null, 2)}`);
       koCounter++;
     } else {
       okCounter++;
     }
   }
-  console.log('TOTAL: ', okCounter + koCounter);
-  console.log('');
+  console.log('\n\nTOTAL: ', okCounter + koCounter);
   console.log('Passed: ', okCounter);
   console.log('Failed: ', koCounter);
 
   console.log('');
   if (koCounter) {
-    console.log('FAIL :-(');
+    console.log(chalk.red('FAILED'));
   } else {
-    console.log('PASS :-)');
+    console.log(chalk.green('PASSED'));
   }
 }
 
