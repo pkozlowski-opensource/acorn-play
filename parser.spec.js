@@ -132,6 +132,19 @@ test('single event handler', `<button (click)='doSth()'>`, {
   ]
 });
 
+test('multiple event handlers with statements', `<button (click)='doSth(); doSthElse()' (keydown)="i++">`, {
+  body: [
+    {
+      type: 'JshElementStart',
+      name: 'button',
+      attributes: [
+        {type: 'JshAttribute', name: '(click)', value: 'doSth(); doSthElse()'},
+        {type: 'JshAttribute', name: '(keydown)', value: 'i++'}
+      ]
+    },
+  ]
+});
+
 // attributes - with expression bindings 
 test('single attribute without value', `<a href={expr}>`, {
   body: [
