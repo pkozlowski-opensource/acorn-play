@@ -17,6 +17,7 @@
   },
   "homepage": "https://github.com/pkozlowski-opensource/acorn-play#readme",
   "dependencies": {
-    "acorn": "^6.1.1"
+    "acorn": "^6.1.1",
+    "escodegen": "^1.11.1"
   }
 }
