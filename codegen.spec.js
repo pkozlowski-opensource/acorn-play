@@ -1,13 +1,17 @@
 const acorn = require('acorn');
+const escodegen = require('escodegen');
+
 const prettier = require('prettier');
+const jsdiff = require('diff');
+const chalk = require('chalk');
 
 const parserPluginFactory = require('./parser').jshPluginFactory;
 const generate = require('./codegen').generate;
 
-const parser = acorn.Parser.extend(parserPluginFactory({}));
+const parser = acorn.Parser.extend(parserPluginFactory());
 
 function transpile(src) {
-  return generate(parser.parse(src));
+  return generate(parser.parse(src, {sourceType: 'module'}));
 }
 
 describe('code generation', () => {
@@ -18,15 +22,30 @@ describe('code generation', () => {
         return {
           compare: function(actual, expected) {
             const actualPretty = prettier.format(actual);
-            const expectedPretty = prettier.format(expected);
+
+            // parse and re-generate expected output to:
+            // - make sure that the expected value is valid
+            // - have identical formatting (as we are using the same code
+            // generator)
+            const expectedPretty = prettier.format(escodegen.generate(
+                acorn.Parser.parse(expected, {sourceType: 'module'})));
 
             const result = {};
 
-            result.pass = actualPretty === expectedPretty;
+            result.pass = expectedPretty === actualPretty;
             if (result.pass) {
               result.message = `All good`;
             } else {
-              result.message = `Not the same :-(`
+              const diffResults =
+                  jsdiff.diffChars(expectedPretty, actualPretty);
+              result.message = diffResults
+                                   .map((part) => {
+                                     return part.added ?
+                                         chalk.green(part.value) :
+                                         part.removed ? chalk.red(part.value) :
+                                                        chalk.gray(part.value);
+                                   })
+                                   .join('');
             }
 
             return result;
@@ -39,9 +58,13 @@ describe('code generation', () => {
   it('should do nothing when there are no template tags', () => {
 
     expect(transpile(`
+      import {foo} from 'bar';
+
       function notATemplate() {        
       }
     `)).toOutput(`
+      import {foo} from 'bar';
+
       function notATemplate() {        
       }
     `);
