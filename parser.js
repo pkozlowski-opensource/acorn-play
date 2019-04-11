@@ -24,10 +24,11 @@ jshTokens.jshTagEnd.updateContext = function() {
 
 function isJshNameStart(ch) {
   // A-Z || a-z || [ || ( || $
-  return (ch >= 65 && ch <= 90) || (ch >= 97 && ch <= 122) || ch === 91 || ch === 40 || ch === 36;
+  return (ch >= 65 && ch <= 90) || (ch >= 97 && ch <= 122) || ch === 91 ||
+      ch === 40 || ch === 36;
 }
 
-function isJshNamePart(ch) {  
+function isJshNamePart(ch) {
   // isJshNameStart || ] || )
   return isJshNameStart(ch) || ch === 93 || ch === 41;
 }
@@ -38,7 +39,7 @@ function jshPlugin(options, Parser) {
     _parseAttribute() {
       let node = this.startNode();
 
-      // attribute name      
+      // attribute name
       node.name = this.value;
       this.expect(jshTokens.jshName);
 
@@ -53,7 +54,7 @@ function jshPlugin(options, Parser) {
           this.expect(tt.braceR);
         } else {
           this.unexpected();
-        }        
+        }
       }
 
       return this.finishNode(node, 'JshAttribute');
@@ -136,8 +137,8 @@ function jshPlugin(options, Parser) {
 
     updateContext(prevType) {
       if (prevType === jshTokens.jshTagStart && this.type === tt.slash) {
-        this.context.pop();         // pop open tag context
-        this.context.push(tc_cTag); // push close tag context
+        this.context.pop();          // pop open tag context
+        this.context.push(tc_cTag);  // push close tag context
       }
 
       return super.updateContext(prevType);

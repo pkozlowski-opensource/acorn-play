@@ -1,38 +1,124 @@
-const testing = require('./testing');
-const test = testing.test;
-const ftest = testing.ftest;
-const run = testing.run;
+const acorn = require('acorn');
+const parserPluginFactory = require('./parser').jshPluginFactory;
 
-// JS blocks
-test('should parse JS', 'let i = 0;', {body: [{type: 'VariableDeclaration'}]});
+const parser = acorn.Parser.extend(parserPluginFactory());
 
-// elements
-test('element start', '<a>', {'body': [{type: 'JshElementStart', name: 'a'}]});
-test(
-    'keyword as a tag name', '<if>',
-    {'body': [{type: 'JshElementStart', name: 'if'}]});
+function isAstDifferent(expected, actual) {
+  const keys = Object.keys(expected);
 
-test('element end', '</a>', {'body': [{type: 'JshElementEnd', name: 'a'}]});
+  for (let key of keys) {
+    const expectedValue = expected[key];
+    const expectedValueType = typeof expectedValue;
+    if (actual == null) {
+      debugger;
+    }
+    const actualValue = actual[key];
 
-test('element without children', '<a></a>', {
-  'body': [
-    {type: 'JshElementStart', name: 'a'}, {type: 'JshElementEnd', name: 'a'}
-  ]
-});
+    if (Array.isArray(expectedValue)) {
+      if (expectedValue.length !== actualValue.length) {
+        return true;
+      }
+      for (let i = 0; i < expectedValue.length; i++) {
+        if (isAstDifferent(expectedValue[i], actualValue[i])) {
+          return true;
+        }
+      }
+    } else if (expectedValueType === 'object') {
+      if (isAstDifferent(expectedValue, actualValue)) {
+        return true;
+      }
+    } else if (expectedValue !== actualValue) {
+      return true;
+    }
+  }
 
-test('nested elements', '<a><b></b></a>', {
-  'body': [
-    {type: 'JshElementStart', name: 'a'},
-    {type: 'JshElementStart', name: 'b'},
-    {type: 'JshElementEnd', name: 'b'},
-    {type: 'JshElementEnd', name: 'a'},
-  ]
-});
+  return false;
+}
 
-test('self-closing elements', '<a/>', {
-  'body': [
-    {type: 'JshElement', name: 'a'},
-  ]
+function test(name, src, expectedAst) {
+  it(name, () => {
+    const producedAst = parser.parse(src);
+    expect(isAstDifferent(expectedAst, producedAst))
+        .toBeFalsy(
+            `Expected:\n\n ${JSON.stringify(expectedAst, null, 2)} \n\nbut got:\n\n ${JSON.stringify(producedAst, null, 2)}`);
+  });
+}
+
+describe('parser', () => {
+
+  beforeEach(function() {
+    jasmine.addMatchers({
+      toProduceAst: function(util, customEqualityTesters) {
+        return {
+          compare: function(src, expected) {
+            const actual = parser.parse(src);
+            const result = {};
+
+            result.pass = !isAstDifferent(expected, actual);
+            if (result.pass) {
+              result.message = `All good`;
+            } else {
+              result.message =
+                  `Expected:\n\n ${JSON.stringify(expected, null, 2)} \n\nbut got:\n\n ${JSON.stringify(actual, null, 2)}`;
+            }
+
+            return result;
+          }
+        };
+      }
+    });
+  });
+
+  describe('JS blocks', () => {
+
+    it('should parse JS without tags nor decorators', () => {
+      expect('let i = 0;').toProduceAst({
+        body: [{type: 'VariableDeclaration'}]
+      });
+    });
+  });
+
+  describe('tags', () => {
+    it('should parse element start', () => {
+      expect('<a>').toProduceAst(
+          {body: [{type: 'JshElementStart', name: 'a'}]});
+    });
+
+    it('should parse element end', () => {
+      expect('</a>').toProduceAst({body: [{type: 'JshElementEnd', name: 'a'}]});
+    });
+
+    it('should parse element start where tag name is JS keyword', () => {
+      expect('<if>').toProduceAst(
+          {body: [{type: 'JshElementStart', name: 'if'}]});
+    });
+
+    it('should parse element start followed by end without children', () => {
+      expect('<a></a>').toProduceAst({
+        'body': [
+          {type: 'JshElementStart', name: 'a'},
+          {type: 'JshElementEnd', name: 'a'}
+        ]
+      });
+    });
+
+    it('should parse nested elements', () => {
+      expect('<a><b></b></a>').toProduceAst({
+        'body': [
+          {type: 'JshElementStart', name: 'a'},
+          {type: 'JshElementStart', name: 'b'},
+          {type: 'JshElementEnd', name: 'b'},
+          {type: 'JshElementEnd', name: 'a'},
+        ]
+      });
+    });
+
+    it('should parse self-closing elements', () => {
+      expect('<a/>').toProduceAst({body: [{type: 'JshElement', name: 'a'}]});
+    });
+
+  });
+
 });
 
 // attributes - without value
@@ -95,7 +181,8 @@ test('single attribute with quoted value', '<a href="http://go.com">', {
     {
       type: 'JshElementStart',
       name: 'a',
-      attributes: [{type: 'JshAttribute', name: 'href', value: 'http://go.com'}]
+      attributes:
+          [{type: 'JshAttribute', name: 'href', value: 'http://go.com'}]
     },
   ]
 });
@@ -106,7 +193,8 @@ test('single attribute without value', `<a href='http://go.com'>`, {
     {
       type: 'JshElementStart',
       name: 'a',
-      attributes: [{type: 'JshAttribute', name: 'href', value: 'http://go.com'}]
+      attributes:
+          [{type: 'JshAttribute', name: 'href', value: 'http://go.com'}]
     },
   ]
 });
@@ -121,26 +209,33 @@ test('single event handler', `<button (click)='doSth()'>`, {
   ]
 });
 
-test('multiple event handlers with statements', `<button (click)='doSth(); doSthElse()' (keydown)="i++">`, {
-  body: [
-    {
-      type: 'JshElementStart',
-      name: 'button',
-      attributes: [
-        {type: 'JshAttribute', name: '(click)', value: 'doSth(); doSthElse()'},
-        {type: 'JshAttribute', name: '(keydown)', value: 'i++'}
+test(
+    'multiple event handlers with statements',
+    `<button (click)='doSth(); doSthElse()' (keydown)="i++">`, {
+      body: [
+        {
+          type: 'JshElementStart',
+          name: 'button',
+          attributes: [
+            {
+              type: 'JshAttribute',
+              name: '(click)',
+              value: 'doSth(); doSthElse()'
+            },
+            {type: 'JshAttribute', name: '(keydown)', value: 'i++'}
+          ]
+        },
       ]
-    },
-  ]
-});
+    });
 
-// attributes - with expression bindings 
+// attributes - with expression bindings
 test('single attribute without value', `<a href={expr}>`, {
   body: [
     {
       type: 'JshElementStart',
       name: 'a',
-      attributes: [{type: 'JshAttribute', name: 'href', value: {type: 'Identifier'}}]
+      attributes:
+          [{type: 'JshAttribute', name: 'href', value: {type: 'Identifier'}}]
     },
   ]
 });
@@ -148,7 +243,12 @@ test('single attribute without value', `<a href={expr}>`, {
 // attributes on self-closing elements
 test('self-closing elements', '<a href="http://go.com"/>', {
   'body': [
-    {type: 'JshElement', name: 'a', attributes: [{type: 'JshAttribute', name: 'href', value: 'http://go.com'}]},
+    {
+      type: 'JshElement',
+      name: 'a',
+      attributes:
+          [{type: 'JshAttribute', name: 'href', value: 'http://go.com'}]
+    },
   ]
 });
 
@@ -183,7 +283,7 @@ test('JS blocks inside element', '<a>let a = 1;</a>', {
   ]
 });
 
-// components 
+// components
 test('tag names indicating components', '<$cmpt></$cmpt>', {
   'body': [
     {type: 'JshElementStart', name: '$cmpt'},
@@ -199,7 +299,11 @@ test('self-closing tag names indicating components', '<$cmpt/>', {
 
 test('attributes on self-closing components', '<$cmpt do="good"/>', {
   'body': [
-    {type: 'JshElement', name: '$cmpt', attributes: [{type: 'JshAttribute', name: 'do', value: 'good'}]},
+    {
+      type: 'JshElement',
+      name: '$cmpt',
+      attributes: [{type: 'JshAttribute', name: 'do', value: 'good'}]
+    },
   ]
 });
 
@@ -207,5 +311,3 @@ test('attributes on self-closing components', '<$cmpt do="good"/>', {
 // <a ""> - rubish in the attribute name place
 // </*&$$ - rubbish after </
 // </a attr - attribute after </
-
-run();
