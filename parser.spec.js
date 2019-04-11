@@ -124,6 +124,77 @@ describe('parser', () => {
 
   });
 
+  describe('attributes', () => {
+
+    it('should parse a single attribute without a value', () => {
+      expect('<a href>').toProduceAst({
+        body: [
+          {
+            type: 'JshElementStart',
+            name: 'a',
+            attributes: [{type: 'JshAttribute', name: 'href'}]
+          },
+        ]
+      });
+    });
+
+    it('should parse attributes without value', () => {
+      expect('<a href checked>').toProduceAst({
+        body: [
+          {
+            type: 'JshElementStart',
+            name: 'a',
+            attributes: [
+              {type: 'JshAttribute', name: 'href'},
+              {type: 'JshAttribute', name: 'checked'},
+            ]
+          },
+        ]
+      });
+    });
+
+    it('should parse attributes with JS keywords', () => {
+      expect('<a if for>').toProduceAst({
+        body: [
+          {
+            name: 'a',
+            attributes: [
+              {type: 'JshAttribute', name: 'if'},
+              {type: 'JshAttribute', name: 'for'},
+            ]
+          },
+        ]
+      });
+    });
+
+    it('should parse a single attribute with []', () => {
+      expect('<a [if]>').toProduceAst({
+        body: [
+          {
+            name: 'a',
+            attributes: [
+              {type: 'JshAttribute', name: '[if]'},
+            ]
+          },
+        ]
+      });
+    });
+
+    it('should parse a single attribute with ()', () => {
+      expect('<button (click)>').toProduceAst({
+        body: [
+          {
+            name: 'button',
+            attributes: [
+              {type: 'JshAttribute', name: '(click)'},
+            ]
+          },
+        ]
+      });
+    });
+
+  });
+
   describe('text nodes', () => {
 
     it('should parse standalone string expression statements', () => {
@@ -209,59 +280,6 @@ describe('parser', () => {
 
 });
 
-// attributes - without value
-test('single attribute without value', '<a href>', {
-  body: [
-    {
-      type: 'JshElementStart',
-      name: 'a',
-      attributes: [{type: 'JshAttribute', name: 'href'}]
-    },
-  ]
-});
-
-test('multiple attributes without value', '<a href checked>', {
-  body: [
-    {
-      type: 'JshElementStart',
-      name: 'a',
-      attributes: [
-        {type: 'JshAttribute', name: 'href'},
-        {type: 'JshAttribute', name: 'checked'},
-      ]
-    },
-  ]
-});
-
-test('single attribute being a keyword', '<a if>', {
-  body: [
-    {
-      type: 'JshElementStart',
-      name: 'a',
-      attributes: [{type: 'JshAttribute', name: 'if'}]
-    },
-  ]
-});
-
-test('single attribute with []', '<a [if]>', {
-  body: [
-    {
-      type: 'JshElementStart',
-      name: 'a',
-      attributes: [{type: 'JshAttribute', name: '[if]'}]
-    },
-  ]
-});
-
-test('single attribute with ()', '<a (click)>', {
-  body: [
-    {
-      type: 'JshElementStart',
-      name: 'a',
-      attributes: [{type: 'JshAttribute', name: '(click)'}]
-    },
-  ]
-});
 
 // attributes - with double quoted value
 test('single attribute with quoted value', '<a href="http://go.com">', {
@@ -396,6 +414,6 @@ test('attributes on self-closing components', '<$cmpt do="good"/>', {
 });
 
 // tests to write:
-// <a ""> - rubish in the attribute name place
+// <a ""> - rubbish in the attribute name place
 // </*&$$ - rubbish after </
 // </a attr - attribute after </
