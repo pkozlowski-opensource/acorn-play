@@ -1,7 +1,6 @@
 - convert parser tests to Jasmine
   - finish conversion of the remaining parser tests
   - make sure that I've got a matcher that produces readable failrues
-- introduce decorators: @[name](exp)
 - AST transform  to take care of JshElementStart / JshElementEnd / JshElement nodes
   - change template function signature?
   - how to add imports?
@@ -9,5 +8,5 @@
   - actual tag node -> JS node transformation
   - how to generate consts (outside of a scope of a function, somewhere near top level?)
 - switch to Jasmine or beef-up test runner (progress, color output)
-- error-cases tests
-- move to TS?
+- error-cases tests for parser
+- move project to TS?

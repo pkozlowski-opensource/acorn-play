@@ -8,6 +8,7 @@ const tc_oTag = new TokContext('<tag', false);
 const tc_cTag = new TokContext('</tag', false);
 
 const jshTokens = {
+  jshDecorator: new TokenType('jshDecorator'),
   jshName: new TokenType('jshName'),
   jshTagStart: new TokenType('jshTagStart'),
   jshTagEnd: new TokenType('jshTagEnd')
@@ -95,6 +96,28 @@ function jshPlugin(options, Parser) {
       }
     }
 
+    _parseDecorator() {
+      let startPos = this.start;
+      let startLoc = this.startLoc;
+      let node = this.startNodeAt(startPos, startLoc);
+
+      this.expect(jshTokens.jshDecorator);  // @
+      const decoratorExpression = this.parseExpression();
+
+      if (decoratorExpression.type === 'CallExpression') {
+        node.name = decoratorExpression.callee.name;
+        node.arguments = decoratorExpression.arguments;
+      } else if (decoratorExpression.type === 'Identifier') {
+        node.name = decoratorExpression.name;
+        node.arguments = [];
+      } else {
+        console.log(JSON.stringify(decoratorExpression, null, 2));
+        this.unexpected();
+      }
+
+      return this.finishNode(node, 'JshDecorator');
+    }
+
     _readJshName() {
       let ch, start = this.pos;
       do {
@@ -107,6 +130,7 @@ function jshPlugin(options, Parser) {
 
     readToken(code) {
       let context = this.curContext();
+      debugger;
       if (!context.isExpr) {
         let ch = this.input.charCodeAt(this.pos);
         if (ch === 60) {  // <
@@ -123,6 +147,9 @@ function jshPlugin(options, Parser) {
           } else {  // <|rubbish|
             // this.unexpected();
           }
+        } else if (ch === 64) {  // @
+          ++this.pos;
+          return this.finishToken(jshTokens.jshDecorator);
         }
       }
       return super.readToken(code);
@@ -131,6 +158,8 @@ function jshPlugin(options, Parser) {
     parseStatement(context, topLevel, exportss) {
       if (this.type === jshTokens.jshTagStart) {
         return this._parseElementStartEnd();
+      } else if (this.type === jshTokens.jshDecorator) {
+        return this._parseDecorator();
       }
       return super.parseStatement(context, topLevel, exportss);
     }

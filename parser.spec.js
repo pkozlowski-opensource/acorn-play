@@ -119,6 +119,45 @@ describe('parser', () => {
 
   });
 
+  describe('decorators', () => {
+
+    it('should parse CallExpression decorator', () => {
+      expect('@Component()').toProduceAst({
+        body: [{type: 'JshDecorator', name: 'Component', arguments: []}]
+      });
+    });
+
+    it('should parse Identifier decorator', () => {
+      expect('@Component').toProduceAst({
+        body: [{type: 'JshDecorator', name: 'Component', arguments: []}]
+      });
+    });
+
+    it('should parse CallExpression decorator with arguments', () => {
+      expect('@Component({tag: "div"})').toProduceAst({
+        body: [{
+          type: 'JshDecorator',
+          name: 'Component',
+          arguments: [{type: 'ObjectExpression'}]
+        }]
+      });
+    });
+
+    it('should decorate template functions', () => {
+      expect(`
+        @Component()
+        function sayHello(name) {
+        }
+      `).toProduceAst({
+        body: [
+          {type: 'JshDecorator', name: 'Component'},
+          {type: 'FunctionDeclaration'}
+        ]
+      });
+    });
+
+  });
+
 });
 
 // attributes - without value
