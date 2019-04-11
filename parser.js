@@ -23,15 +23,23 @@ jshTokens.jshTagEnd.updateContext = function() {
   this.context.pop();
 };
 
+function isAsciLetter(ch) {
+  // A-Z || a-z
+  return (ch >= 65 && ch <= 90) || (ch >= 97 && ch <= 122);
+}
+
+function isDigit(ch) {
+  return ch >= 48 && ch <= 57;
+}
+
 function isJshNameStart(ch) {
-  // A-Z || a-z || [ || ( || $
-  return (ch >= 65 && ch <= 90) || (ch >= 97 && ch <= 122) || ch === 91 ||
-      ch === 40 || ch === 36;
+  // letter || [ || ( || $
+  return isAsciLetter(ch) || ch === 91 || ch === 40 || ch === 36;
 }
 
 function isJshNamePart(ch) {
-  // isJshNameStart || ] || )
-  return isJshNameStart(ch) || ch === 93 || ch === 41;
+  // letter || digit || ] || )
+  return isAsciLetter(ch) || isDigit(ch) || ch === 93 || ch === 41;
 }
 
 

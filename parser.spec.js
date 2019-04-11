@@ -88,11 +88,6 @@ describe('parser', () => {
       expect('</a>').toProduceAst({body: [{type: 'JshElementEnd', name: 'a'}]});
     });
 
-    it('should parse element start where tag name is JS keyword', () => {
-      expect('<if>').toProduceAst(
-          {body: [{type: 'JshElementStart', name: 'if'}]});
-    });
-
     it('should parse element start followed by end without children', () => {
       expect('<a></a>').toProduceAst({
         'body': [
@@ -115,6 +110,16 @@ describe('parser', () => {
 
     it('should parse self-closing elements', () => {
       expect('<a/>').toProduceAst({body: [{type: 'JshElement', name: 'a'}]});
+    });
+
+    it('should parse element start where tag name is JS keyword', () => {
+      expect('<if>').toProduceAst(
+          {body: [{type: 'JshElementStart', name: 'if'}]});
+    });
+
+    it('should parse element start where tag name contains numbers', () => {
+      expect('<h1>').toProduceAst(
+          {body: [{type: 'JshElementStart', name: 'h1'}]});
     });
 
   });
