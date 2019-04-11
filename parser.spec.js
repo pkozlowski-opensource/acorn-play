@@ -124,6 +124,38 @@ describe('parser', () => {
 
   });
 
+  describe('text nodes', () => {
+
+    it('should parse standalone string expression statements', () => {
+      expect('"Hello, World!"').toProduceAst({
+        body: [{type: 'ExpressionStatement'}]
+      });
+    });
+
+    it('should parse string expression statements between tags', () => {
+      expect(`<h1>"Hello, World!"</h1>`).toProduceAst({
+        body: [
+          {type: 'JshElementStart'},
+          {type: 'ExpressionStatement'},
+          {type: 'JshElementEnd'},
+        ]
+      });
+    });
+
+    it('should parse string expression statements mixed with tags', () => {
+      expect(`<h1>"Hello, "<b>"World!"</b></h1>`).toProduceAst({
+        body: [
+          {type: 'JshElementStart', name: 'h1'},
+          {type: 'ExpressionStatement'},
+          {type: 'JshElementStart', name: 'b'},
+          {type: 'ExpressionStatement'},
+          {type: 'JshElementEnd', name: 'b'},
+          {type: 'JshElementEnd', name: 'h1'},
+        ]
+      });
+    });
+  });
+
   describe('decorators', () => {
 
     it('should parse CallExpression decorator', () => {
@@ -162,6 +194,18 @@ describe('parser', () => {
     });
 
   });
+
+  describe('integration', () => {
+
+    it('should parse tags and text nodes inside function declarations', () => {
+      expect(`
+        @Component()
+        function sayHello(name) {
+          <h1>"Hello, {{name}}"</h1>
+        }
+      `).toProduceAst({});
+    });
+  })
 
 });
 

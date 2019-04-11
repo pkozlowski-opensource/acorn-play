@@ -104,6 +104,10 @@ function jshPlugin(options, Parser) {
       }
     }
 
+    canInsertSemicolon() {
+      return this.type === jshTokens.jshTagStart || super.canInsertSemicolon();
+    };
+
     _parseDecorator() {
       let startPos = this.start;
       let startLoc = this.startLoc;
@@ -119,7 +123,6 @@ function jshPlugin(options, Parser) {
         node.name = decoratorExpression.name;
         node.arguments = [];
       } else {
-        console.log(JSON.stringify(decoratorExpression, null, 2));
         this.unexpected();
       }
 
