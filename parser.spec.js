@@ -126,70 +126,125 @@ describe('parser', () => {
 
   describe('attributes', () => {
 
-    it('should parse a single attribute without a value', () => {
-      expect('<a href>').toProduceAst({
-        body: [
-          {
-            type: 'JshElementStart',
-            name: 'a',
-            attributes: [{type: 'JshAttribute', name: 'href'}]
-          },
-        ]
+    describe('without value', () => {
+
+      it('should parse a single attribute without a value', () => {
+        expect('<a href>').toProduceAst({
+          body: [
+            {
+              type: 'JshElementStart',
+              name: 'a',
+              attributes: [{type: 'JshAttribute', name: 'href'}]
+            },
+          ]
+        });
       });
+
+      it('should parse multiple attributes without value', () => {
+        expect('<a href checked>').toProduceAst({
+          body: [
+            {
+              type: 'JshElementStart',
+              name: 'a',
+              attributes: [
+                {type: 'JshAttribute', name: 'href'},
+                {type: 'JshAttribute', name: 'checked'},
+              ]
+            },
+          ]
+        });
+      });
+
+      it('should parse attributes with JS keywords', () => {
+        expect('<a if for>').toProduceAst({
+          body: [
+            {
+              name: 'a',
+              attributes: [
+                {type: 'JshAttribute', name: 'if'},
+                {type: 'JshAttribute', name: 'for'},
+              ]
+            },
+          ]
+        });
+      });
+
+      it('should parse a single attribute with []', () => {
+        expect('<a [if]>').toProduceAst({
+          body: [
+            {
+              name: 'a',
+              attributes: [
+                {type: 'JshAttribute', name: '[if]'},
+              ]
+            },
+          ]
+        });
+      });
+
+      it('should parse a single attribute with ()', () => {
+        expect('<button (click)>').toProduceAst({
+          body: [
+            {
+              name: 'button',
+              attributes: [
+                {type: 'JshAttribute', name: '(click)'},
+              ]
+            },
+          ]
+        });
+      });
+
     });
 
-    it('should parse attributes without value', () => {
-      expect('<a href checked>').toProduceAst({
-        body: [
-          {
-            type: 'JshElementStart',
-            name: 'a',
-            attributes: [
-              {type: 'JshAttribute', name: 'href'},
-              {type: 'JshAttribute', name: 'checked'},
-            ]
-          },
-        ]
+    describe('with quoted values', () => {
+
+      it('should parse single attribute with double-quoted value', () => {
+        expect('<a href="http://go.com">').toProduceAst({
+          body: [
+            {
+              type: 'JshElementStart',
+              name: 'a',
+              attributes: [
+                {type: 'JshAttribute', name: 'href', value: 'http://go.com'}
+              ]
+            },
+          ]
+        });
       });
+
+      it('should parse single attribute with single-quoted value', () => {
+        expect(`<a href='http://go.com'>`).toProduceAst({
+          body: [
+            {
+              type: 'JshElementStart',
+              name: 'a',
+              attributes: [
+                {type: 'JshAttribute', name: 'href', value: 'http://go.com'}
+              ]
+            },
+          ]
+        });
+      });
+
     });
 
-    it('should parse attributes with JS keywords', () => {
-      expect('<a if for>').toProduceAst({
-        body: [
-          {
-            name: 'a',
-            attributes: [
-              {type: 'JshAttribute', name: 'if'},
-              {type: 'JshAttribute', name: 'for'},
-            ]
-          },
-        ]
-      });
-    });
+    describe('with expression values', () => {
 
-    it('should parse a single attribute with []', () => {
-      expect('<a [if]>').toProduceAst({
-        body: [
-          {
-            name: 'a',
-            attributes: [
-              {type: 'JshAttribute', name: '[if]'},
-            ]
-          },
-        ]
-      });
-    });
-
-    it('should parse a single attribute with ()', () => {
-      expect('<button (click)>').toProduceAst({
-        body: [
-          {
-            name: 'button',
-            attributes: [
-              {type: 'JshAttribute', name: '(click)'},
-            ]
-          },
-        ]
+      it('should parse attribute with expression binding', () => {
+        expect(`<a href={expr}>`).toProduceAst({
+          body: [
+            {
+              type: 'JshElementStart',
+              name: 'a',
+              attributes: [{
+                type: 'JshAttribute',
+                name: 'href',
+                value: {type: 'Identifier'}
+              }]
+            },
+          ]
+        });
       });
     });
 
@@ -281,30 +336,6 @@ describe('parser', () => {
 });
 
 
-// attributes - with double quoted value
-test('single attribute with quoted value', '<a href="http://go.com">', {
-  body: [
-    {
-      type: 'JshElementStart',
-      name: 'a',
-      attributes:
-          [{type: 'JshAttribute', name: 'href', value: 'http://go.com'}]
-    },
-  ]
-});
-
-// attributes - with single quoted value
-test('single attribute without value', `<a href='http://go.com'>`, {
-  body: [
-    {
-      type: 'JshElementStart',
-      name: 'a',
-      attributes:
-          [{type: 'JshAttribute', name: 'href', value: 'http://go.com'}]
-    },
-  ]
-});
-
 test('single event handler', `<button (click)='doSth()'>`, {
   body: [
     {
@@ -334,17 +365,6 @@ test(
       ]
     });
 
-// attributes - with expression bindings
-test('single attribute without value', `<a href={expr}>`, {
-  body: [
-    {
-      type: 'JshElementStart',
-      name: 'a',
-      attributes:
-          [{type: 'JshAttribute', name: 'href', value: {type: 'Identifier'}}]
-    },
-  ]
-});
 
 // attributes on self-closing elements
 test('self-closing elements', '<a href="http://go.com"/>', {

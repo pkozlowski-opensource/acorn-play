@@ -1,9 +1,7 @@
 - convert parser tests to Jasmine  
-- AST transform
-  - change template function signature (?)
+- AST transforms  
   - add meaning to elements / components and their attributes (or do this in the initial template pass)    
-  - take care of JshElementStart / JshElementEnd / JshElement nodes
-    - how to add imports?      
+  - take care of JshElementStart / JshElementEnd / JshElement nodes    
     - how to generate consts (outside of a scope of a function, somewhere near top level?)
 - make sure that I've got a Jasmine matcher that produces readable parser failures
 - error-cases tests for parser
