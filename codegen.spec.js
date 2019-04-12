@@ -21,14 +21,16 @@ describe('code generation', () => {
       toOutput: function(util, customEqualityTesters) {
         return {
           compare: function(actual, expected) {
-            const actualPretty = prettier.format(actual);
+            const actualPretty = prettier.format(actual, {parser: 'babel'});
 
             // parse and re-generate expected output to:
             // - make sure that the expected value is valid
             // - have identical formatting (as we are using the same code
             // generator)
-            const expectedPretty = prettier.format(escodegen.generate(
-                acorn.Parser.parse(expected, {sourceType: 'module'})));
+            const expectedPretty = prettier.format(
+                escodegen.generate(
+                    acorn.Parser.parse(expected, {sourceType: 'module'})),
+                {parser: 'babel'});
 
             const result = {};
 
@@ -55,19 +57,69 @@ describe('code generation', () => {
     });
   });
 
-  it('should do nothing when there are no template tags', () => {
+  describe('template function signature', () => {
+    it('should do nothing when there are no template tags', () => {
+      expect(transpile(`
+        import {foo} from 'bar';
+  
+        function notATemplate() {        
+        }
+      `)).toOutput(`
+        import {foo} from 'bar';
+  
+        function notATemplate() {        
+        }
+      `);
+    });
 
-    expect(transpile(`
-      import {foo} from 'bar';
+    it('should add context argument to template functions', () => {
+      expect(transpile(`    
+        @Template()
+        function emptyTemplate(someArg) {        
+        }
+      `)).toOutput(`
+        function emptyTemplate($renderContext, someArg) {
+        }
+      `);
+    });
+  });
 
-      function notATemplate() {        
-      }
-    `)).toOutput(`
-      import {foo} from 'bar';
+  describe('instructions', () => {
 
-      function notATemplate() {        
-      }
-    `);
+    it('should do nothing to literal statements outside of template functions',
+       () => {
+         expect(transpile(`"Hello, World!"`)).toOutput(`"Hello, World!"`);
+       });
+
+    it('should generate single text node in template functions', () => {
+      expect(transpile(`    
+        @Template()
+        function hello() {        
+          "Hello, World!"
+        }
+      `)).toOutput(`
+        import {Θtext} from "fw-x";
+        function hello($renderContext) {
+          Θtext(0, "Hello, World!");
+        }
+      `);
+    });
+
+    it('should generate tags with text nodes', () => {
+      expect(transpile(`    
+        @Template()
+        function hello() {        
+          <h1>"Hello, World!"</h1>
+        }
+      `)).toOutput(`
+        import {ΘelementStart, Θtext, ΘelementEnd} from "fw-x";
+        function hello($renderContext) {
+          ΘelementStart(0, "h1");
+          Θtext(1, "Hello, World!");
+          ΘelementEnd(0);
+        }
+      `);
+    });
 
   });
 
