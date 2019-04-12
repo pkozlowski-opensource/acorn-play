@@ -7,13 +7,32 @@ const INSTRUCTIONS = {
   elementEnd: 'ΘelementEnd'
 };
 
-function instruction(name, args) {
+function createImport(what, from) {
+  const specifierNames = Array.from(what).sort();
+  return {
+    type: 'ImportDeclaration',
+    specifiers: specifierNames.map((specifierName) => {
+      const specifier = {type: 'Identifier', name: specifierName};
+      return {
+        type: 'ImportSpecifier',
+        imported: specifier,
+        local: specifier,
+      };
+    }),
+    source: {type: 'Literal', value: from}
+  };
+}
+
+function createInstruction(name, idx, args) {
   return {
     type: 'ExpressionStatement',
     expression: {
       type: 'CallExpression',
       callee: {type: 'Identifier', name: name},
-      arguments: args
+      arguments: [
+        {type: 'Identifier', name: '$renderContext'},
+        {type: 'Literal', value: idx}
+      ].concat(args || [])
     }
   };
 }
@@ -33,16 +52,15 @@ class DecoratorsTransform {
       node.instructionIndex = this.visitor.instructionsCounter++;
       this.visitor.elementsStack.push(node);
       this.visitor.instructionImports.add(INSTRUCTIONS.elementStart);
-      return instruction(INSTRUCTIONS.elementStart, [
-        {type: 'Literal', value: node.instructionIndex},
-        {type: 'Literal', value: node.name},
-      ]);
+      return createInstruction(
+          INSTRUCTIONS.elementStart, node.instructionIndex, [
+            {type: 'Literal', value: node.name},
+          ]);
     } else if (node.type === 'JshElementEnd') {
       const closedNode = this.visitor.elementsStack.pop();
       this.visitor.instructionImports.add(INSTRUCTIONS.elementEnd);
-      return instruction(INSTRUCTIONS.elementEnd, [
-        {type: 'Literal', value: closedNode.instructionIndex},
-      ]);
+      return createInstruction(
+          INSTRUCTIONS.elementEnd, closedNode.instructionIndex);
     } else if (node.type === 'FunctionDeclaration') {
       if (this.decorator) {
         node.params.unshift({type: 'Identifier', name: '$renderContext'});
@@ -53,10 +71,9 @@ class DecoratorsTransform {
     } else if (node.type === 'ExpressionStatement') {
       if (this.inTemplate && node.expression.type === 'Literal') {
         this.visitor.instructionImports.add(INSTRUCTIONS.text);
-        return instruction(INSTRUCTIONS.text, [
-          {type: 'Literal', value: this.visitor.instructionsCounter++},
-          {type: 'Literal', value: node.expression.value}
-        ]);
+        return createInstruction(
+            INSTRUCTIONS.text, this.visitor.instructionsCounter++,
+            [{type: 'Literal', value: node.expression.value}]);
       }
     }
   }
@@ -68,21 +85,8 @@ class DecoratorsTransform {
       }
     } else if (node.type === 'Program') {
       if (this.visitor.instructionImports.size) {
-        const instructionsToImport = [];
-        this.visitor.instructionImports.forEach((instruction) => {
-          const specifier = {type: 'Identifier', name: instruction};
-          instructionsToImport.push({
-            type: 'ImportSpecifier',
-            imported: specifier,
-            local: specifier,
-          });
-        });
-
-        node.body.unshift({
-          type: 'ImportDeclaration',
-          specifiers: instructionsToImport,
-          source: {type: 'Literal', value: 'fw-x'}
-        });
+        node.body.unshift(
+            createImport(this.visitor.instructionImports, 'fw-x'));
       }
     }
   }

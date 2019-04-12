@@ -100,7 +100,7 @@ describe('code generation', () => {
       `)).toOutput(`
         import {Θtext} from "fw-x";
         function hello($renderContext) {
-          Θtext(0, "Hello, World!");
+          Θtext($renderContext, 0, "Hello, World!");
         }
       `);
     });
@@ -112,11 +112,11 @@ describe('code generation', () => {
           <h1>"Hello, World!"</h1>
         }
       `)).toOutput(`
-        import {ΘelementStart, Θtext, ΘelementEnd} from "fw-x";
+        import {ΘelementEnd, ΘelementStart, Θtext} from "fw-x";
         function hello($renderContext) {
-          ΘelementStart(0, "h1");
-          Θtext(1, "Hello, World!");
-          ΘelementEnd(0);
+          ΘelementStart($renderContext, 0, "h1");
+          Θtext($renderContext, 1, "Hello, World!");
+          ΘelementEnd($renderContext, 0);
         }
       `);
     });
