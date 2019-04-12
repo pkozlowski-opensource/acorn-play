@@ -4,7 +4,8 @@ const escodegen = require('escodegen');
 const INSTRUCTIONS = {
   text: 'Θtext',
   elementStart: 'ΘelementStart',
-  elementEnd: 'ΘelementEnd'
+  elementEnd: 'ΘelementEnd',
+  element: 'Θelement',
 };
 
 function createImport(what, from) {
@@ -61,6 +62,12 @@ class DecoratorsTransform {
       this.visitor.instructionImports.add(INSTRUCTIONS.elementEnd);
       return createInstruction(
           INSTRUCTIONS.elementEnd, closedNode.instructionIndex);
+    } else if (node.type === 'JshElement') {
+      this.visitor.instructionImports.add(INSTRUCTIONS.element);
+      return createInstruction(
+          INSTRUCTIONS.element, this.visitor.instructionsCounter++, [
+            {type: 'Literal', value: node.name},
+          ]);
     } else if (node.type === 'FunctionDeclaration') {
       if (this.decorator) {
         node.params.unshift({type: 'Identifier', name: '$renderContext'});

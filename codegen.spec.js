@@ -121,6 +121,20 @@ describe('code generation', () => {
       `);
     });
 
+    it('should generate element for self-closing tags', () => {
+      expect(transpile(`    
+        @Template()
+        function hello() {        
+          <br/>
+        }
+      `)).toOutput(`
+        import {Θelement} from "fw-x";
+        function hello($renderContext) {
+          Θelement($renderContext, 0, "br");
+        }
+      `);
+    });
+
   });
 
 });
