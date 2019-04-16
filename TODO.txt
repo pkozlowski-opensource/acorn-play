@@ -2,11 +2,10 @@
   - add meaning to elements / components and their attributes (or do this in the initial template pass)    
 - code generation
   - take care of JshElementStart / JshElementEnd / JshElement nodes    
-  - static attributes
-    - how to generate consts (outside of a scope of a function, somewhere near top level?)
   - attr bindings
-  - prop bindings
   - listeners  
+  - pull out static attribute arrays
+    - how to generate consts (outside of a scope of a function, somewhere near top level?)
 - convert remaining parser tests to Jasmine  
 - error-cases tests for parser
 - move project to TS?

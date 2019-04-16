@@ -126,6 +126,35 @@ describe('code generation', () => {
       `);
     });
 
+    it('should generate elements with static attributes', () => {
+      expect(transpile(`    
+        @Template()
+        function hello() {        
+          <img src="picture.png"></img>
+        }
+      `)).toOutput(`
+        import {ΘelementEnd, ΘelementStart} from "fw-x";
+        function hello($renderContext) {
+          ΘelementStart($renderContext, 0, "img", ["src", "picture.png"]);
+          ΘelementEnd($renderContext, 0);
+        }
+      `);
+    });
+
+    it('should generate self-closing elements with static attributes', () => {
+      expect(transpile(`    
+        @Template()
+        function hello() {        
+          <img id="pic" src="picture.png"/>
+        }
+      `)).toOutput(`
+        import {Θelement} from "fw-x";
+        function hello($renderContext) {
+          Θelement($renderContext, 0, "img", ["id", "pic", "src", "picture.png"]);
+        }
+      `);
+    });
+
   });
 
 });

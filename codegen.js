@@ -38,6 +38,23 @@ function createInstruction(name, idx, args) {
   };
 }
 
+function createAttrsArray(attrs) {
+  const attrElements = [];
+  attrs.forEach((attr) => {
+    attrElements.push({type: 'Literal', value: attr.name});
+    attrElements.push({type: 'Literal', value: attr.value});
+  });
+  return {type: 'ArrayExpression', elements: attrElements};
+}
+
+function createElementInstruction(type, idx, tagName, attrs) {
+  const instructionArgs = [{type: 'Literal', value: tagName}];
+  if (attrs.length) {
+    instructionArgs.push(createAttrsArray(attrs));
+  }
+  return createInstruction(type, idx, instructionArgs);
+}
+
 class DecoratorsTransform {
   constructor() {
     this.instructionImports = new Set();
@@ -53,10 +70,9 @@ class DecoratorsTransform {
       node.instructionIndex = this.visitor.instructionsCounter++;
       this.visitor.elementsStack.push(node);
       this.visitor.instructionImports.add(INSTRUCTIONS.elementStart);
-      return createInstruction(
-          INSTRUCTIONS.elementStart, node.instructionIndex, [
-            {type: 'Literal', value: node.name},
-          ]);
+      return createElementInstruction(
+          INSTRUCTIONS.elementStart, node.instructionIndex, node.name,
+          node.attributes);
     } else if (node.type === 'JshElementEnd') {
       const closedNode = this.visitor.elementsStack.pop();
       this.visitor.instructionImports.add(INSTRUCTIONS.elementEnd);
@@ -64,10 +80,9 @@ class DecoratorsTransform {
           INSTRUCTIONS.elementEnd, closedNode.instructionIndex);
     } else if (node.type === 'JshElement') {
       this.visitor.instructionImports.add(INSTRUCTIONS.element);
-      return createInstruction(
-          INSTRUCTIONS.element, this.visitor.instructionsCounter++, [
-            {type: 'Literal', value: node.name},
-          ]);
+      return createElementInstruction(
+          INSTRUCTIONS.element, this.visitor.instructionsCounter++, node.name,
+          node.attributes);
     } else if (node.type === 'FunctionDeclaration') {
       if (this.decorator) {
         node.params.unshift({type: 'Identifier', name: '$renderContext'});
