@@ -3,6 +3,11 @@ const parserPluginFactory = require('./parser').jshPluginFactory;
 
 const parser = acorn.Parser.extend(parserPluginFactory());
 const testHelper = require('./test_helper');
+const toProduceAstMatcher = require('./test_matchers').toProduceAstMatcher;
+
+function parse(src) {
+  return parser.parse(src);
+}
 
 function test(name, src, expectedAst) {
   it(name, () => {
@@ -18,35 +23,13 @@ function test(name, src, expectedAst) {
 describe('parser', () => {
 
   beforeEach(function() {
-    jasmine.addMatchers({
-      toProduceAst: function(util, customEqualityTesters) {
-        return {
-          compare: function(src, expected) {
-            const actual = parser.parse(src);
-            const result = {};
-
-            result.pass = !testHelper.isAstDifferent(expected, actual);
-            if (result.pass) {
-              result.message = `All good`;
-            } else {
-              const expectedIntersection =
-                  testHelper.objectIntersect(actual, expected);
-              result.message = testHelper.formatDiff(
-                  JSON.stringify(expected, null, 2),
-                  JSON.stringify(expectedIntersection, null, 2));
-            }
-
-            return result;
-          }
-        };
-      }
-    });
+    jasmine.addMatchers({toProduceAst: toProduceAstMatcher});
   });
 
   describe('JS blocks', () => {
 
     it('should parse JS without tags nor decorators', () => {
-      expect('let i = 0;').toProduceAst({
+      expect(parse('let i = 0;')).toProduceAst({
         body: [{type: 'VariableDeclaration'}]
       });
     });
@@ -54,16 +37,19 @@ describe('parser', () => {
 
   describe('tags', () => {
     it('should parse element start', () => {
-      expect('<a>').toProduceAst(
-          {body: [{type: 'JshElementStart', name: 'a'}]});
+      expect(parse('<a>')).toProduceAst({
+        body: [{type: 'JshElementStart', name: 'a'}]
+      });
     });
 
     it('should parse element end', () => {
-      expect('</a>').toProduceAst({body: [{type: 'JshElementEnd', name: 'a'}]});
+      expect(parse('</a>')).toProduceAst({
+        body: [{type: 'JshElementEnd', name: 'a'}]
+      });
     });
 
     it('should parse element start followed by end without children', () => {
-      expect('<a></a>').toProduceAst({
+      expect(parse('<a></a>')).toProduceAst({
         'body': [
           {type: 'JshElementStart', name: 'a'},
           {type: 'JshElementEnd', name: 'a'}
@@ -72,7 +58,7 @@ describe('parser', () => {
     });
 
     it('should parse nested elements', () => {
-      expect('<a><b></b></a>').toProduceAst({
+      expect(parse('<a><b></b></a>')).toProduceAst({
         'body': [
           {type: 'JshElementStart', name: 'a'},
           {type: 'JshElementStart', name: 'b'},
@@ -83,17 +69,21 @@ describe('parser', () => {
     });
 
     it('should parse self-closing elements', () => {
-      expect('<a/>').toProduceAst({body: [{type: 'JshElement', name: 'a'}]});
+      expect(parse('<a/>')).toProduceAst({
+        body: [{type: 'JshElement', name: 'a'}]
+      });
     });
 
     it('should parse element start where tag name is JS keyword', () => {
-      expect('<if>').toProduceAst(
-          {body: [{type: 'JshElementStart', name: 'if'}]});
+      expect(parse('<if>')).toProduceAst({
+        body: [{type: 'JshElementStart', name: 'if'}]
+      });
     });
 
     it('should parse element start where tag name contains numbers', () => {
-      expect('<h1>').toProduceAst(
-          {body: [{type: 'JshElementStart', name: 'h1'}]});
+      expect(parse('<h1>')).toProduceAst({
+        body: [{type: 'JshElementStart', name: 'h1'}]
+      });
     });
 
   });
@@ -103,7 +93,7 @@ describe('parser', () => {
     describe('without value', () => {
 
       it('should parse a single attribute without a value', () => {
-        expect('<a href>').toProduceAst({
+        expect(parse('<a href>')).toProduceAst({
           body: [
             {
               type: 'JshElementStart',
@@ -115,7 +105,7 @@ describe('parser', () => {
       });
 
       it('should parse multiple attributes without value', () => {
-        expect('<a href checked>').toProduceAst({
+        expect(parse('<a href checked>')).toProduceAst({
           body: [
             {
               type: 'JshElementStart',
@@ -130,7 +120,7 @@ describe('parser', () => {
       });
 
       it('should parse attributes with JS keywords', () => {
-        expect('<a if for>').toProduceAst({
+        expect(parse('<a if for>')).toProduceAst({
           body: [
             {
               name: 'a',
@@ -144,7 +134,7 @@ describe('parser', () => {
       });
 
       it('should parse a single attribute with []', () => {
-        expect('<a [if]>').toProduceAst({
+        expect(parse('<a [if]>')).toProduceAst({
           body: [
             {
               name: 'a',
@@ -157,7 +147,7 @@ describe('parser', () => {
       });
 
       it('should parse a single attribute with ()', () => {
-        expect('<button (click)>').toProduceAst({
+        expect(parse('<button (click)>')).toProduceAst({
           body: [
             {
               name: 'button',
@@ -174,7 +164,7 @@ describe('parser', () => {
     describe('with quoted values', () => {
 
       it('should parse single attribute with double-quoted value', () => {
-        expect('<a href="http://go.com">').toProduceAst({
+        expect(parse('<a href="http://go.com">')).toProduceAst({
           body: [
             {
               type: 'JshElementStart',
@@ -188,7 +178,7 @@ describe('parser', () => {
       });
 
       it('should parse single attribute with single-quoted value', () => {
-        expect(`<a href='http://go.com'>`).toProduceAst({
+        expect(parse(`<a href='http://go.com'>`)).toProduceAst({
           body: [
             {
               type: 'JshElementStart',
@@ -206,7 +196,7 @@ describe('parser', () => {
     describe('with expression values', () => {
 
       it('should parse attribute with expression binding', () => {
-        expect(`<a href={expr}>`).toProduceAst({
+        expect(parse(`<a href={expr}>`)).toProduceAst({
           body: [
             {
               type: 'JshElementStart',
@@ -227,13 +217,13 @@ describe('parser', () => {
   describe('text nodes', () => {
 
     it('should parse standalone string expression statements', () => {
-      expect('"Hello, World!"').toProduceAst({
+      expect(parse('"Hello, World!"')).toProduceAst({
         body: [{type: 'ExpressionStatement'}]
       });
     });
 
     it('should parse string expression statements between tags', () => {
-      expect(`<h1>"Hello, World!"</h1>`).toProduceAst({
+      expect(parse(`<h1>"Hello, World!"</h1>`)).toProduceAst({
         body: [
           {type: 'JshElementStart'},
           {type: 'ExpressionStatement'},
@@ -243,7 +233,7 @@ describe('parser', () => {
     });
 
     it('should parse string expression statements mixed with tags', () => {
-      expect(`<h1>"Hello, "<b>"World!"</b></h1>`).toProduceAst({
+      expect(parse(`<h1>"Hello, "<b>"World!"</b></h1>`)).toProduceAst({
         body: [
           {type: 'JshElementStart', name: 'h1'},
           {type: 'ExpressionStatement'},
@@ -259,19 +249,19 @@ describe('parser', () => {
   describe('decorators', () => {
 
     it('should parse CallExpression decorator', () => {
-      expect('@Component()').toProduceAst({
+      expect(parse('@Component()')).toProduceAst({
         body: [{type: 'JshDecorator', name: 'Component', arguments: []}]
       });
     });
 
     it('should parse Identifier decorator', () => {
-      expect('@Component').toProduceAst({
+      expect(parse('@Component')).toProduceAst({
         body: [{type: 'JshDecorator', name: 'Component', arguments: []}]
       });
     });
 
     it('should parse CallExpression decorator with arguments', () => {
-      expect('@Component({tag: "div"})').toProduceAst({
+      expect(parse('@Component({tag: "div"})')).toProduceAst({
         body: [{
           type: 'JshDecorator',
           name: 'Component',
@@ -281,11 +271,11 @@ describe('parser', () => {
     });
 
     it('should decorate template functions', () => {
-      expect(`
+      expect(parse(`
         @Component()
         function sayHello(name) {
         }
-      `).toProduceAst({
+      `)).toProduceAst({
         body: [
           {type: 'JshDecorator', name: 'Component'},
           {type: 'FunctionDeclaration'}

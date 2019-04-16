@@ -34,7 +34,6 @@ function isAstDifferent(expected, actual) {
 }
 
 function objectIntersect(actual, expected) {
-  const expectedKeys = Object.keys(expected);
   const isArray = Array.isArray(expected);
   const intersection = isArray ? [] : {};
 
@@ -43,12 +42,16 @@ function objectIntersect(actual, expected) {
     for (let i = 0; i < len; i++) {
       const actualValue = actual[i];
       if (typeof actualValue === 'object') {
-        intersection[i] = objectIntersect(actualValue, expected[i]);
+        const expectedValue = expected[i];
+        intersection[i] = expectedValue != null ?
+            objectIntersect(actualValue, expectedValue) :
+            expectedValue;
       } else {
         intersection[i] = actual[i];
       }
     }
   } else {
+    const expectedKeys = Object.keys(expected);
     expectedKeys.forEach((key) => {
       const actualValue = actual[key];
       if (typeof actualValue === 'object') {
