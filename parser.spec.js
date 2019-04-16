@@ -2,45 +2,16 @@ const acorn = require('acorn');
 const parserPluginFactory = require('./parser').jshPluginFactory;
 
 const parser = acorn.Parser.extend(parserPluginFactory());
-
-function isAstDifferent(expected, actual) {
-  const keys = Object.keys(expected);
-
-  for (let key of keys) {
-    const expectedValue = expected[key];
-    const expectedValueType = typeof expectedValue;
-    if (actual == null) {
-      debugger;
-    }
-    const actualValue = actual[key];
-
-    if (Array.isArray(expectedValue)) {
-      if (expectedValue.length !== actualValue.length) {
-        return true;
-      }
-      for (let i = 0; i < expectedValue.length; i++) {
-        if (isAstDifferent(expectedValue[i], actualValue[i])) {
-          return true;
-        }
-      }
-    } else if (expectedValueType === 'object') {
-      if (isAstDifferent(expectedValue, actualValue)) {
-        return true;
-      }
-    } else if (expectedValue !== actualValue) {
-      return true;
-    }
-  }
-
-  return false;
-}
+const testHelper = require('./test_helper');
 
 function test(name, src, expectedAst) {
   it(name, () => {
     const producedAst = parser.parse(src);
-    expect(isAstDifferent(expectedAst, producedAst))
+    const astIntersection =
+        testHelper.objectIntersect(producedAst, expectedAst);
+    expect(testHelper.isAstDifferent(expectedAst, producedAst))
         .toBeFalsy(
-            `Expected:\n\n ${JSON.stringify(expectedAst, null, 2)} \n\nbut got:\n\n ${JSON.stringify(producedAst, null, 2)}`);
+            `Expected:\n\n ${JSON.stringify(expectedAst, null, 2)} \n\nbut got:\n\n ${JSON.stringify(astIntersection, null, 2)}`);
   });
 }
 
@@ -54,12 +25,15 @@ describe('parser', () => {
             const actual = parser.parse(src);
             const result = {};
 
-            result.pass = !isAstDifferent(expected, actual);
+            result.pass = !testHelper.isAstDifferent(expected, actual);
             if (result.pass) {
               result.message = `All good`;
             } else {
-              result.message =
-                  `Expected:\n\n ${JSON.stringify(expected, null, 2)} \n\nbut got:\n\n ${JSON.stringify(actual, null, 2)}`;
+              const expectedIntersection =
+                  testHelper.objectIntersect(actual, expected);
+              result.message = testHelper.formatDiff(
+                  JSON.stringify(expected, null, 2),
+                  JSON.stringify(expectedIntersection, null, 2));
             }
 
             return result;

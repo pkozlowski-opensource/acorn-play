@@ -1,12 +1,11 @@
 const acorn = require('acorn');
 const escodegen = require('escodegen');
-
 const prettier = require('prettier');
-const jsdiff = require('diff');
-const chalk = require('chalk');
 
 const parserPluginFactory = require('./parser').jshPluginFactory;
 const generate = require('./codegen').generate;
+
+const testHelper = require('./test_helper');
 
 const parser = acorn.Parser.extend(parserPluginFactory());
 
@@ -38,16 +37,8 @@ describe('code generation', () => {
             if (result.pass) {
               result.message = `All good`;
             } else {
-              const diffResults =
-                  jsdiff.diffChars(expectedPretty, actualPretty);
-              result.message = diffResults
-                                   .map((part) => {
-                                     return part.added ?
-                                         chalk.green(part.value) :
-                                         part.removed ? chalk.red(part.value) :
-                                                        chalk.gray(part.value);
-                                   })
-                                   .join('');
+              result.message =
+                  testHelper.formatDiff(expectedPretty, actualPretty);
             }
 
             return result;
